@@ -1,10 +1,11 @@
 import React, { Component } from "react";
 import "./App.css";
-import axios from "axios";
 import SearchBar from "./Components/SearchBar/SearchBar";
 import ImageGallery from "./Components/ImageGallery/ImageGallery";
 import Button from "./Components/Button/Button";
-import { fetchGallery } from "./services/gallery-api";
+import axios from "axios";
+import { smoothScroll } from "./services/smoothScroll";
+import { ToastContainer, toast } from "react-toastify";
 
 axios.defaults.baseURL = "https://pixabay.com/api/";
 const KEY = "22496813-a3fbe39786787c712b168fbe4";
@@ -23,6 +24,15 @@ export default class App extends Component {
         const { data } = await axios.get(
           `?q=${searchValue}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
         );
+        if (data.hits.length === 0) {
+          toast.error(
+            "Sorry, there are no images matching your search query. Please try again.",
+            {
+              autoClose: 3000,
+            }
+          );
+        }
+
         this.setState((prev) => ({
           gallery: data.hits,
           page: prev.page + 1,
@@ -41,6 +51,7 @@ export default class App extends Component {
       gallery: [...prev.gallery, ...data.hits],
       page: prev.page + 1,
     }));
+    smoothScroll();
   };
 
   handleSubmit = (searchValue) => {
@@ -56,6 +67,7 @@ export default class App extends Component {
         <SearchBar onSubmit={this.handleSubmit} />
         <ImageGallery gallery={gallery} />
         {galleryLength && <Button onClick={this.handleLoadMore} />}
+        <ToastContainer />
       </div>
     );
   }
