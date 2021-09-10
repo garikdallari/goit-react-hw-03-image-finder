@@ -1,9 +1,15 @@
 import React from "react";
 
-function ImageGalleryItem({ item }) {
+function ImageGalleryItem({ item, onClick }) {
   return (
     <li className="ImageGalleryItem">
-      <img src={item.webformatURL} alt="" className="ImageGalleryItem-image" />
+      <img
+        data-large={item.largeImageURL}
+        onClick={onClick}
+        src={item.webformatURL}
+        alt=""
+        className="ImageGalleryItem-image"
+      />
     </li>
   );
 }

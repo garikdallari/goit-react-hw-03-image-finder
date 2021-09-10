@@ -3,9 +3,11 @@ import "./App.css";
 import SearchBar from "./Components/SearchBar/SearchBar";
 import ImageGallery from "./Components/ImageGallery/ImageGallery";
 import Button from "./Components/Button/Button";
+import Modal from "./Components/Modal/Modal";
 import axios from "axios";
 import { smoothScroll } from "./services/smoothScroll";
 import { ToastContainer, toast } from "react-toastify";
+import Loader from "react-loader-spinner";
 
 axios.defaults.baseURL = "https://pixabay.com/api/";
 const KEY = "22496813-a3fbe39786787c712b168fbe4";
@@ -15,12 +17,19 @@ export default class App extends Component {
     searchValue: "",
     gallery: [],
     page: 1,
+    isModalOpen: false,
+    reqStatus: "idle,",
+    largeImgUrl: "",
   };
 
   async componentDidUpdate(_, prevState) {
     const { searchValue, page } = this.state;
     try {
       if (prevState.searchValue !== this.state.searchValue) {
+        this.setState({
+          reqStatus: "pending",
+          largeImgUrl: "",
+        });
         const { data } = await axios.get(
           `?q=${searchValue}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
         );
@@ -34,6 +43,7 @@ export default class App extends Component {
         }
 
         this.setState((prev) => ({
+          reqStatus: "resolved",
           gallery: data.hits,
           page: prev.page + 1,
         }));
@@ -59,14 +69,47 @@ export default class App extends Component {
       searchValue,
     });
   };
+
+  toggleImg = (e) => {
+    this.setState(({ isModalOpen }) => ({
+      isModalOpen: true,
+      largeImgUrl: e.target.dataset.large,
+    }));
+  };
+
+  toggleModal = (e) => {
+    this.setState({
+      isModalOpen: false,
+    });
+  };
+
   render() {
-    const { gallery } = this.state;
+    const { gallery, reqStatus, isModalOpen, largeImgUrl } = this.state;
     const galleryLength = gallery.length > 1;
+
+    if (reqStatus === "pending") {
+      return (
+        <Loader
+          type="Puff"
+          color="#00BFFF"
+          height={100}
+          width={100}
+          timeout={10000}
+        />
+      );
+    }
     return (
       <div className="Container">
         <SearchBar onSubmit={this.handleSubmit} />
-        <ImageGallery gallery={gallery} />
+        <ImageGallery onClick={this.toggleImg} gallery={gallery} />
         {galleryLength && <Button onClick={this.handleLoadMore} />}
+        {isModalOpen && (
+          <Modal src={largeImgUrl} onClose={this.toggleModal}>
+            <div style={{ width: 900 }}>
+              <img src={largeImgUrl} alt="" />
+            </div>
+          </Modal>
+        )}
         <ToastContainer />
       </div>
     );
