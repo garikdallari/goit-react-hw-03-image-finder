@@ -4,13 +4,10 @@ import SearchBar from "./Components/SearchBar/SearchBar";
 import ImageGallery from "./Components/ImageGallery/ImageGallery";
 import Button from "./Components/Button/Button";
 import Modal from "./Components/Modal/Modal";
-import axios from "axios";
+import { fetchGallery } from "./services/gallery-api";
 import { smoothScroll } from "./services/smoothScroll";
 import { ToastContainer, toast } from "react-toastify";
 import Loader from "react-loader-spinner";
-
-axios.defaults.baseURL = "https://pixabay.com/api/";
-const KEY = "22496813-a3fbe39786787c712b168fbe4";
 
 export default class App extends Component {
   state = {
@@ -30,10 +27,9 @@ export default class App extends Component {
           reqStatus: "pending",
           largeImgUrl: "",
         });
-        const { data } = await axios.get(
-          `?q=${searchValue}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
-        );
-        if (data.hits.length === 0) {
+        const images = await fetchGallery(searchValue, page);
+
+        if (images.length === 0) {
           toast.error(
             "Sorry, there are no images matching your search query. Please try again.",
             {
@@ -44,7 +40,7 @@ export default class App extends Component {
 
         this.setState((prev) => ({
           reqStatus: "resolved",
-          gallery: data.hits,
+          gallery: images,
           page: prev.page + 1,
         }));
       }
@@ -52,13 +48,13 @@ export default class App extends Component {
       console.log(error);
     }
   }
+
   handleLoadMore = async () => {
-    const { data } = await axios.get(
-      `https://pixabay.com/api/?q=${this.state.searchValue}&page=${this.state.page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`
-    );
+    const { searchValue, page } = this.state;
+    const images = await fetchGallery(searchValue, page);
 
     this.setState((prev) => ({
-      gallery: [...prev.gallery, ...data.hits],
+      gallery: [...prev.gallery, ...images],
       page: prev.page + 1,
     }));
     smoothScroll();
@@ -67,17 +63,18 @@ export default class App extends Component {
   handleSubmit = (searchValue) => {
     this.setState({
       searchValue,
+      page: 1,
     });
   };
 
-  toggleImg = (e) => {
-    this.setState(({ isModalOpen }) => ({
+  handleLargeImgUrl = (e) => {
+    this.setState({
       isModalOpen: true,
       largeImgUrl: e.target.dataset.large,
-    }));
+    });
   };
 
-  toggleModal = (e) => {
+  toggleModal = () => {
     this.setState({
       isModalOpen: false,
     });
@@ -98,11 +95,14 @@ export default class App extends Component {
         />
       );
     }
+
     return (
       <div className="Container">
         <SearchBar onSubmit={this.handleSubmit} />
-        <ImageGallery onClick={this.toggleImg} gallery={gallery} />
-        {galleryLength && <Button onClick={this.handleLoadMore} />}
+        <ImageGallery onClick={this.handleLargeImgUrl} gallery={gallery} />
+        {galleryLength && (
+          <Button onClick={this.handleLoadMore}>Load more</Button>
+        )}
         {isModalOpen && (
           <Modal src={largeImgUrl} onClose={this.toggleModal}>
             <div style={{ width: 900 }}>

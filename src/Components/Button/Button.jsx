@@ -1,9 +1,9 @@
 import React from "react";
 
-function Button({ onClick }) {
+function Button({ onClick, children }) {
   return (
     <button className="Button" onClick={onClick}>
-      Load more
+      {children}
     </button>
   );
 }
